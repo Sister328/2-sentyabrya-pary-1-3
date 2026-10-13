@@ -1,0 +1,108 @@
+@startuml
+title «Перекуп» — схема архитектуры
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "Пользовательский интерфейс" {
+  class "Экран карты" as MapView
+  class "Экран объявлений" as MarketplaceView
+  class "Экран чата" as ChatView
+  class "Экран гаража" as GarageView
+  class "Экран банка" as BankView
+}
+
+package "Управление игрой" {
+  class "Контроллер игры" as GameController {
+    +открыть_локацию(название)
+    +выполнить_действие(действие)
+    +сохранить_игру()
+  }
+}
+
+package "Игровые сервисы" {
+  class "Сервис объявлений" as MarketplaceService {
+    +найти_объявления(фильтры)
+    +купить_автомобиль(игрок, объявление)
+    +разместить_объявление(игрок, автомобиль, цена)
+    +принять_предложение(объявление, предложение)
+  }
+  class "Сервис ремонта" as RepairService {
+    +ремонт_в_гараже(автомобиль, детали)
+    +ремонт_на_СТО(автомобиль)
+  }
+  class "Банковский сервис" as BankService {
+    +выдать_кредит(игрок, сумма)
+    +погасить_кредит(игрок, кредит, сумма)
+  }
+  class "Движок диалогов" as DialogueEngine {
+    +выбрать_ответ(сеанс, вариант)
+  }
+  class "Менеджер сохранений" as SaveManager {
+    +сохранить(состояние)
+    +загрузить()
+  }
+}
+
+package "Основные сущности" {
+  class "Игрок" as Player {
+    -_баланс: число
+    -_автомобили: список
+    +получить_баланс()
+    +списать_деньги(сумма)
+    +начислить_деньги(сумма)
+    +купить_автомобиль(автомобиль)
+  }
+  class "Автомобиль" as Car {
+    -_состояние: словарь
+    +получить_состояние()
+    +применить_ремонт(деталь, успех)
+    +оценить_стоимость()
+  }
+  class "Запчасть" as Part {
+    -_название: строка
+    -_цена: число
+    +получить_цену()
+  }
+  class "Объявление" as Listing {
+    -_статус: строка
+    +сделать_предложение(цена)
+    +закрыть()
+  }
+  class "Кредит" as Loan {
+    -_остаток_долга: число
+    +погасить(сумма)
+    +погашен()
+  }
+  class "Запись о ремонте" as RepairRecord
+}
+
+MapView --> GameController
+MarketplaceView --> GameController
+ChatView --> GameController
+GarageView --> GameController
+BankView --> GameController
+
+GameController --> MarketplaceService
+GameController --> RepairService
+GameController --> BankService
+GameController --> DialogueEngine
+GameController --> SaveManager
+
+MarketplaceService --> Player
+MarketplaceService --> Car
+MarketplaceService --> Listing
+RepairService --> Car
+RepairService --> Part
+RepairService --> RepairRecord
+BankService --> Player
+BankService --> Loan
+DialogueEngine --> Listing
+SaveManager ..> Player : сохранение
+SaveManager ..> Car : сохранение
+
+Player "1" o-- "0..*" Car : владеет
+Car "1" o-- "0..*" RepairRecord : история ремонтов
+Player "1" o-- "0..*" Loan : кредиты
+Listing "0..*" --> "1" Car : объявление об автомобиле
+@enduml
